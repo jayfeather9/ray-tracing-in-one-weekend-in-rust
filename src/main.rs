@@ -18,7 +18,7 @@ use ray::Ray;
 use vec3::Point3;
 use vec3::Vec3;
 
-fn ray_color(r: Ray, world: Box<&dyn Hittable>) -> Color {
+fn ray_color(r: Ray, world: &dyn Hittable) -> Color {
     let mut rec = HitRecord::new();
     if world.hit(&r, Interval::new(0.0, utils::INF), &mut rec) {
         return (rec.normal + Color::new(1.0, 1.0, 1.0)) * 0.5;
@@ -84,7 +84,7 @@ fn main() -> Result<(), std::io::Error> {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(r, Box::new(&world));
+            let pixel_color = ray_color(r, &world);
             color::write_color(&mut s, pixel_color);
         }
     }
