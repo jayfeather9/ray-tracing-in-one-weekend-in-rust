@@ -1,9 +1,16 @@
 use super::hittable::Hittable;
 use super::vec3::Point3;
 
-struct Sphere {
-    center: Point3,
-    radius: f64,
+#[derive(Clone, Debug)]
+pub struct Sphere {
+    pub center: Point3,
+    pub radius: f64,
+}
+
+impl Sphere {
+    pub fn new(center: Point3, radius: f64) -> Self {
+        Self { center, radius }
+    }
 }
 
 impl Hittable for Sphere {

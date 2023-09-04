@@ -1,39 +1,32 @@
 use std::fs;
 
 mod color;
+mod utils;
 use color::Color;
 mod ray;
 use ray::Ray;
 mod hittable;
+use hittable::HitRecord;
+use hittable::Hittable;
+mod hittable_list;
+use hittable_list::HittableList;
 mod sphere;
 mod vec3;
 use vec3::Point3;
 use vec3::Vec3;
 
-fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
-    let oc = r.origin() - *center;
-    let a = r.direction().dot_square();
-    let half_b = oc.dot(&r.direction());
-    let c = oc.dot_square() - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
-}
-
-fn ray_color(r: ray::Ray) -> Color {
-    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, &r);
-    if t > 0.0 {
-        let n = Vec3::unit(&(r.at(t) - Vec3::new(0.0, 0.0, -1.0)));
-        return Color::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0) * 0.5;
+fn ray_color(r: Ray, world: Box<dyn Hittable>) -> (Color, Box<dyn Hittable>) {
+    let mut rec = HitRecord::new();
+    if world.hit(&r, 0.0, utils::INF, &mut rec) {
+        return ((rec.normal + Color::new(1.0, 1.0, 1.0)) * 0.5, world);
     }
 
     let uni_direction = Vec3::unit(&r.direction());
     let beta = 0.5 * (uni_direction.y() + 1.0);
-    Color::same(1.0) * (1.0 - beta) + Color::new(0.5, 0.7, 1.0) * beta
+    (
+        Color::same(1.0) * (1.0 - beta) + Color::new(0.5, 0.7, 1.0) * beta,
+        world,
+    )
 }
 
 fn main() -> Result<(), std::io::Error> {
@@ -45,6 +38,18 @@ fn main() -> Result<(), std::io::Error> {
     let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as i32;
     let image_height = if image_height < 1 { 1 } else { image_height };
+
+    // World
+    let mut world = Box::new(HittableList::new());
+
+    world.add(Box::new(sphere::Sphere::new(
+        Point3::new(0.0, 0.0, -1.0),
+        0.5,
+    )));
+    world.add(Box::new(sphere::Sphere::new(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+    )));
 
     // Viewport size
     let focal_length = 1.0;
@@ -78,7 +83,7 @@ fn main() -> Result<(), std::io::Error> {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(r);
+            let pixel_color = ray_color(r, world.clone());
             color::write_color(&mut s, pixel_color);
         }
     }

@@ -2,6 +2,7 @@ use super::ray::Ray;
 use super::vec3::Point3;
 use super::vec3::Vec3;
 
+#[derive(Clone, Debug)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
@@ -10,6 +11,15 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
+    pub fn new() -> Self {
+        Self {
+            p: Point3::zero(),
+            normal: Vec3::zero(),
+            t: 0.0,
+            front_face: false,
+        }
+    }
+
     pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3) {
         // sets the hit record normal vector
         // NOTE: the parameter outward_normal is assumed to be a unit vector
@@ -22,6 +32,6 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: std::fmt::Debug {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }
