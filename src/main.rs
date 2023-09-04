@@ -47,11 +47,12 @@ fn main() -> Result<(), std::io::Error> {
 
     // Camera
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
-    let cam = Camera::new(aspect_ratio, image_width);
+    let image_width = 800;
+    let samples_per_pixel = 20;
+    let cam = Camera::new(aspect_ratio, image_width, samples_per_pixel);
 
     // Render
-    cam.render(&world, "image.ppm")?;
+    cam.render(&world, "image.ppm", 5)?;
 
     Ok(())
 }

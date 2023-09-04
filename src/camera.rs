@@ -12,6 +12,7 @@ use crate::Vec3;
 pub struct Camera {
     pub aspect_ratio: f64,
     pub image_width: i32,
+    pub samples_per_pixel: i32,
     image_height: i32,
     center: Point3,
     pixel00_loc: Point3,
@@ -20,7 +21,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: i32, samples_per_pixel: i32) -> Self {
         let image_height = (image_width as f64 / aspect_ratio) as i32;
         let image_height = if image_height < 1 { 1 } else { image_height };
         let focal_length = 1.0;
@@ -38,12 +39,17 @@ impl Camera {
         Self {
             aspect_ratio,
             image_width,
+            samples_per_pixel,
             image_height,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
         }
+    }
+
+    pub fn default() -> Self {
+        Self::new(1.0, 100, 10)
     }
 
     fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
@@ -58,7 +64,31 @@ impl Camera {
         Color::same(1.0) * (1.0 - beta) + Color::new(0.5, 0.7, 1.0) * beta
     }
 
-    pub fn render(&self, world: &dyn Hittable, image_path: &str) -> Result<(), std::io::Error> {
+    fn pixel_sample_square(&self) -> Vec3 {
+        // Returns a random point in the square surrounding a pixel at the origin.
+        let px = -0.5 + utils::random_double();
+        let py = -0.5 + utils::random_double();
+        // px, py are in (-0.5, 0.5)
+        (self.pixel_delta_u * px) + (self.pixel_delta_v * py)
+    }
+
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let pixel_center =
+            self.pixel00_loc + self.pixel_delta_u * i as f64 + self.pixel_delta_v * j as f64;
+        let pixel_sample = pixel_center + self.pixel_sample_square();
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - self.center;
+
+        Ray::new(ray_origin, ray_direction)
+    }
+
+    pub fn render(
+        &self,
+        world: &dyn Hittable,
+        image_path: &str,
+        log_interval: i32,
+    ) -> Result<(), std::io::Error> {
         let mut percentage = 0;
         let mut s = String::from(&format!(
             "P3\n{} {}\n255\n",
@@ -67,20 +97,18 @@ impl Camera {
         for j in 0..self.image_height {
             // Log
             if j as f64 / self.image_height as f64 * 100.0 > percentage as f64 {
-                if percentage % 5 == 0 {
+                if percentage % log_interval == 0 {
                     println!("{}% finished", percentage);
                 }
                 percentage += 1;
             }
             for i in 0..self.image_width {
-                let pixel_center = self.pixel00_loc
-                    + self.pixel_delta_u * i as f64
-                    + self.pixel_delta_v * j as f64;
-                let ray_direction = pixel_center - self.center;
-                let r = Ray::new(self.center, ray_direction);
-
-                let pixel_color = Self::ray_color(&r, world);
-                crate::color::write_color(&mut s, pixel_color);
+                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                for _ in 0..self.samples_per_pixel {
+                    let r = self.get_ray(i, j);
+                    pixel_color += Self::ray_color(&r, world);
+                }
+                crate::color::write_color(&mut s, pixel_color, self.samples_per_pixel);
             }
         }
         // Log
