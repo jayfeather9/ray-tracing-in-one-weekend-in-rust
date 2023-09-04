@@ -1,5 +1,8 @@
-use super::hittable::Hittable;
-use super::vec3::Point3;
+use crate::hittable::HitRecord;
+use crate::hittable::Hittable;
+use crate::interval::Interval;
+use crate::ray::Ray;
+use crate::vec3::Point3;
 
 #[derive(Clone, Debug)]
 pub struct Sphere {
@@ -14,13 +17,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(
-        &self,
-        r: &crate::ray::Ray,
-        t_min: f64,
-        t_max: f64,
-        rec: &mut crate::hittable::HitRecord,
-    ) -> bool {
+    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         let oc = r.origin() - self.center;
         let a = r.direction().dot_square();
         let half_b = oc.dot(&r.direction());
@@ -34,9 +31,9 @@ impl Hittable for Sphere {
         let sqrtd = discriminant.sqrt();
 
         let mut root = (-half_b - sqrtd) / a;
-        if root < t_min || t_max < root {
+        if !ray_t.contains(root) {
             root = (-half_b + sqrtd) / a;
-            if root < t_min || t_max < root {
+            if !ray_t.contains(root) {
                 return false;
             }
         }

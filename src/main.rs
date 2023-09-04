@@ -1,23 +1,26 @@
 use std::fs;
 
 mod color;
-mod utils;
-use color::Color;
-mod ray;
-use ray::Ray;
 mod hittable;
+mod hittable_list;
+mod interval;
+mod ray;
+mod sphere;
+mod utils;
+mod vec3;
+
+use color::Color;
 use hittable::HitRecord;
 use hittable::Hittable;
-mod hittable_list;
 use hittable_list::HittableList;
-mod sphere;
-mod vec3;
+use interval::Interval;
+use ray::Ray;
 use vec3::Point3;
 use vec3::Vec3;
 
 fn ray_color(r: Ray, world: Box<&dyn Hittable>) -> Color {
     let mut rec = HitRecord::new();
-    if world.hit(&r, 0.0, utils::INF, &mut rec) {
+    if world.hit(&r, Interval::new(0.0, utils::INF), &mut rec) {
         return (rec.normal + Color::new(1.0, 1.0, 1.0)) * 0.5;
     }
 
