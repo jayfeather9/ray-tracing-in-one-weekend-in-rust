@@ -15,18 +15,16 @@ mod vec3;
 use vec3::Point3;
 use vec3::Vec3;
 
-fn ray_color(r: Ray, world: Box<dyn Hittable>) -> (Color, Box<dyn Hittable>) {
+fn ray_color(r: Ray, world: Box<&dyn Hittable>) -> Color {
     let mut rec = HitRecord::new();
     if world.hit(&r, 0.0, utils::INF, &mut rec) {
-        return ((rec.normal + Color::new(1.0, 1.0, 1.0)) * 0.5, world);
+        return (rec.normal + Color::new(1.0, 1.0, 1.0)) * 0.5;
     }
 
     let uni_direction = Vec3::unit(&r.direction());
     let beta = 0.5 * (uni_direction.y() + 1.0);
-    (
-        Color::same(1.0) * (1.0 - beta) + Color::new(0.5, 0.7, 1.0) * beta,
-        world,
-    )
+
+    Color::same(1.0) * (1.0 - beta) + Color::new(0.5, 0.7, 1.0) * beta
 }
 
 fn main() -> Result<(), std::io::Error> {
@@ -40,7 +38,7 @@ fn main() -> Result<(), std::io::Error> {
     let image_height = if image_height < 1 { 1 } else { image_height };
 
     // World
-    let mut world = Box::new(HittableList::new());
+    let mut world = HittableList::new();
 
     world.add(Box::new(sphere::Sphere::new(
         Point3::new(0.0, 0.0, -1.0),
@@ -83,7 +81,7 @@ fn main() -> Result<(), std::io::Error> {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(r, world.clone());
+            let pixel_color = ray_color(r, Box::new(&world));
             color::write_color(&mut s, pixel_color);
         }
     }
