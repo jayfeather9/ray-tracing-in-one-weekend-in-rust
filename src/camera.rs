@@ -10,9 +10,10 @@ use crate::Point3;
 use crate::Vec3;
 
 pub struct Camera {
-    pub aspect_ratio: f64,
-    pub image_width: i32,
-    pub samples_per_pixel: i32,
+    pub aspect_ratio: f64,      // Ratio of image width over height
+    pub image_width: i32,       // Rendered image width in pixel count
+    pub samples_per_pixel: i32, // Count of random samples for each pixel
+    pub max_depth: i32,         // Maximum number of ray bounces into scene
     image_height: i32,
     center: Point3,
     pixel00_loc: Point3,
@@ -21,7 +22,12 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32, samples_per_pixel: i32) -> Self {
+    pub fn new(
+        aspect_ratio: f64,
+        image_width: i32,
+        samples_per_pixel: i32,
+        max_depth: i32,
+    ) -> Self {
         let image_height = (image_width as f64 / aspect_ratio) as i32;
         let image_height = if image_height < 1 { 1 } else { image_height };
         let focal_length = 1.0;
@@ -40,6 +46,7 @@ impl Camera {
             aspect_ratio,
             image_width,
             samples_per_pixel,
+            max_depth,
             image_height,
             center: Point3::new(0.0, 0.0, 0.0),
             pixel00_loc,
@@ -49,13 +56,18 @@ impl Camera {
     }
 
     pub fn default() -> Self {
-        Self::new(1.0, 100, 10)
+        Self::new(1.0, 100, 10, 10)
     }
 
-    fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    fn ray_color(r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
+        if depth <= 0 {
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            return Color::zero();
+        }
         let mut rec = HitRecord::new();
-        if world.hit(&r, Interval::new(0.0, utils::INF), &mut rec) {
-            return (rec.normal + Color::new(1.0, 1.0, 1.0)) * 0.5;
+        if world.hit(&r, Interval::new(0.0001, utils::INF), &mut rec) {
+            let direction = rec.normal + Vec3::random_unit();
+            return Self::ray_color(&Ray::new(rec.p, direction), depth - 1, world) * 0.5;
         }
 
         let uni_direction = Vec3::unit(&r.direction());
@@ -106,7 +118,7 @@ impl Camera {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(i, j);
-                    pixel_color += Self::ray_color(&r, world);
+                    pixel_color += Self::ray_color(&r, self.max_depth, world);
                 }
                 crate::color::write_color(&mut s, pixel_color, self.samples_per_pixel);
             }

@@ -1,3 +1,5 @@
+use crate::utils;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Vec3 {
     x: f64,
@@ -22,6 +24,47 @@ impl Vec3 {
 
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
+    }
+
+    pub fn random() -> Self {
+        Self::new(
+            utils::random_double(),
+            utils::random_double(),
+            utils::random_double(),
+        )
+    }
+
+    pub fn random_in(min: f64, max: f64) -> Self {
+        Self::new(
+            utils::random_double_in(min, max),
+            utils::random_double_in(min, max),
+            utils::random_double_in(min, max),
+        )
+    }
+
+    // pub fn random_unit() -> Self {
+    //     let a = utils::random_double_in(0.0, 2.0 * utils::PI);
+    //     let z = utils::random_double_in(-1.0, 1.0);
+    //     let r = (1.0 - z * z).sqrt();
+    //     Self::new(r * a.cos(), r * a.sin(), z)
+    // }
+
+    pub fn random_unit() -> Self {
+        loop {
+            let p = Self::random_in(-1.0, 1.0);
+            if p.dot_square() < 1.0 {
+                return p.unit();
+            }
+        }
+    }
+
+    pub fn random_on_hemi(normal: &Self) -> Self {
+        let rand_in_unit = Self::random_unit();
+        if rand_in_unit.dot(normal) > 0.0 {
+            rand_in_unit
+        } else {
+            -rand_in_unit
+        }
     }
 
     pub fn x(&self) -> f64 {
