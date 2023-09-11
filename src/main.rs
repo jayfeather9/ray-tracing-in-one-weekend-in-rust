@@ -3,6 +3,7 @@ mod color;
 mod hittable;
 mod hittable_list;
 mod interval;
+mod material;
 mod ray;
 mod sphere;
 mod utils;
@@ -13,6 +14,7 @@ use color::Color;
 use hittable::HitRecord;
 use hittable_list::HittableList;
 use interval::Interval;
+use material::DEFAULT_MATERIAL;
 use vec3::Point3;
 use vec3::Vec3;
 
@@ -23,10 +25,12 @@ fn main() -> Result<(), std::io::Error> {
     world.add(Box::new(sphere::Sphere::new(
         Point3::new(0.0, 0.0, -1.0),
         0.5,
+        &DEFAULT_MATERIAL,
     )));
     world.add(Box::new(sphere::Sphere::new(
         Point3::new(0.0, -100.5, -1.0),
         100.0,
+        &DEFAULT_MATERIAL,
     )));
 
     // Camera

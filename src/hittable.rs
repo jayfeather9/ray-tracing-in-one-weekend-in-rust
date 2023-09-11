@@ -1,23 +1,27 @@
 use crate::interval::Interval;
+use crate::material::Material;
+use crate::material::DEFAULT_MATERIAL;
 use crate::ray::Ray;
 use crate::vec3::Point3;
 use crate::vec3::Vec3;
 
-#[derive(Clone, Debug)]
-pub struct HitRecord {
+#[derive(Debug, Clone, Copy)]
+pub struct HitRecord<'a> {
     pub p: Point3,
     pub normal: Vec3,
+    pub mat: &'a dyn Material,
     pub t: f64,
     pub front_face: bool,
 }
 
-impl HitRecord {
+impl HitRecord<'_> {
     pub fn new() -> Self {
         Self {
             p: Point3::zero(),
             normal: Vec3::zero(),
             t: 0.0,
             front_face: false,
+            mat: &DEFAULT_MATERIAL,
         }
     }
 
