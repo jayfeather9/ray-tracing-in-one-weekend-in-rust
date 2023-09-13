@@ -1,8 +1,7 @@
-use crate::hittable::HitRecord;
-use crate::hittable::Hittable;
+use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
-use crate::material::DefaultMaterial;
 use crate::material::DEFAULT_MATERIAL;
+use crate::ray::Ray;
 use crate::vec3::Point3;
 use crate::vec3::Vec3;
 
@@ -16,38 +15,31 @@ impl HittableList {
         Self { objects: vec![] }
     }
 
-    pub fn new_from(object: Box<dyn Hittable>) -> Self {
-        Self {
-            objects: vec![object],
-        }
-    }
-
     pub fn clear(&mut self) {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.objects.push(object);
+    pub fn add(&mut self, object: impl Hittable + 'static) {
+        self.objects.push(Box::new(object));
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &crate::ray::Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
-        let mut temp_rec = HitRecord {
-            p: Point3::zero(),
-            normal: Vec3::zero(),
-            mat: &DEFAULT_MATERIAL,
-            t: 0.0,
-            front_face: false,
-        };
-        let mut hit_anything = false;
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<HitRecord> {
+        // let mut temp_rec = HitRecord {
+        //     p: Point3::zero(),
+        //     normal: Vec3::zero(),
+        //     mat: &DEFAULT_MATERIAL,
+        //     t: 0.0,
+        //     front_face: false,
+        // };
+        let mut hit_anything: Option<HitRecord> = None;
         let mut closest_so_far = ray_t.max;
 
-        for object in &self.objects {
-            if object.hit(r, Interval::new(ray_t.min, closest_so_far), &mut temp_rec) {
-                hit_anything = true;
-                closest_so_far = temp_rec.t.clone();
-                *rec = temp_rec;
+        for object in self.objects.iter() {
+            if let Some(hit) = object.hit(r, Interval::new(ray_t.min, closest_so_far)) {
+                closest_so_far = hit.t;
+                hit_anything = Some(hit);
             }
         }
 

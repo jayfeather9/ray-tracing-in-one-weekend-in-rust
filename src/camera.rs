@@ -5,6 +5,7 @@ use crate::ray::Ray;
 use crate::utils;
 use crate::Color;
 use crate::HitRecord;
+use crate::HittableList;
 use crate::Interval;
 use crate::Point3;
 use crate::Vec3;
@@ -59,15 +60,19 @@ impl Camera {
         Self::new(1.0, 100, 10, 10)
     }
 
-    fn ray_color(r: &Ray, depth: i32, world: &dyn Hittable) -> Color {
+    fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
         if depth <= 0 {
             // If we've exceeded the ray bounce limit, no more light is gathered.
             return Color::zero();
         }
-        let mut rec = HitRecord::new();
-        if world.hit(&r, Interval::new(0.0001, utils::INF), &mut rec) {
-            let direction = rec.normal + Vec3::random_unit();
-            return Self::ray_color(&Ray::new(rec.p, direction), depth - 1, world) * 0.5;
+        if let Some(rec) = world.hit(&r, Interval::new(0.0001, utils::INF)) {
+            let mut scattered: Ray = Ray::new(Point3::zero(), Vec3::zero());
+            let mut attenuation: Color = Color::zero();
+            return if rec.mat.scatter(&r, &rec, &mut attenuation, &mut scattered) {
+                attenuation * Self::ray_color(&scattered, depth - 1, world)
+            } else {
+                Color::zero()
+            };
         }
 
         let uni_direction = Vec3::unit(&r.direction());
@@ -97,7 +102,7 @@ impl Camera {
 
     pub fn render(
         &self,
-        world: &dyn Hittable,
+        world: &HittableList,
         image_path: &str,
         log_interval: i32,
     ) -> Result<(), std::io::Error> {

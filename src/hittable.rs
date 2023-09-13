@@ -5,7 +5,7 @@ use crate::ray::Ray;
 use crate::vec3::Point3;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct HitRecord<'a> {
     pub p: Point3,
     pub normal: Vec3,
@@ -38,5 +38,5 @@ impl HitRecord<'_> {
 }
 
 pub trait Hittable: std::fmt::Debug {
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
+    fn hit(&self, r: &Ray, ray_t: Interval) -> Option<HitRecord>;
 }
