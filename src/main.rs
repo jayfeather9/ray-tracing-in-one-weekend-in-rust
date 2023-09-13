@@ -22,18 +22,20 @@ fn main() -> Result<(), std::io::Error> {
     let mut world = HittableList::new();
 
     let material_ground = material::Lambertian::new(Color::new(0.8, 0.8, 0.0));
-    let material_center = material::Lambertian::new(Color::new(0.7, 0.3, 0.3));
-    let material_left = material::Metal::new(Color::new(0.8, 0.8, 0.8), 0.3);
-    let material_right = material::Metal::new(Color::new(0.8, 0.6, 0.2), 1.0);
+    let material_center = material::Lambertian::new(Color::new(0.1, 0.2, 0.5));
+    let material_left = material::Dielectric::new(1.5);
+    let material_right = material::Metal::new(Color::new(0.8, 0.6, 0.2), 0.0);
 
     let sphere_ground = sphere::Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground);
     let sphere_center = sphere::Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material_center);
     let sphere_left = sphere::Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, material_left);
+    let sphere_left2 = sphere::Sphere::new(Point3::new(-1.0, 0.0, -1.0), -0.4, material_left);
     let sphere_right = sphere::Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, material_right);
 
     world.add(sphere_ground);
     world.add(sphere_center);
     world.add(sphere_left);
+    world.add(sphere_left2);
     world.add(sphere_right);
 
     // Camera
