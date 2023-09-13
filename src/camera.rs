@@ -3,6 +3,7 @@ use std::fs;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::utils;
+use crate::utils::degrees_to_radians;
 use crate::Color;
 use crate::HitRecord;
 use crate::HittableList;
@@ -15,11 +16,22 @@ pub struct Camera {
     pub image_width: i32,       // Rendered image width in pixel count
     pub samples_per_pixel: i32, // Count of random samples for each pixel
     pub max_depth: i32,         // Maximum number of ray bounces into scene
-    image_height: i32,
-    center: Point3,
-    pixel00_loc: Point3,
-    pixel_delta_u: Vec3,
-    pixel_delta_v: Vec3,
+
+    pub vfov: f64,        // Vertical view angle (field of view)
+    pub lookfrom: Point3, // Point camera is looking from
+    pub lookat: Point3,   // Point camera is looking at
+    pub vup: Vec3,        // Camera-relative "up" direction
+
+    image_height: i32,   // Rendered image height
+    center: Point3,      // Camera center
+    pixel00_loc: Point3, // Location of pixel 0, 0
+    pixel_delta_u: Vec3, // Offset to pixel to the right
+    pixel_delta_v: Vec3, // Offset to pixel below
+
+    // Camera frame basis vectors
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
 }
 
 impl Camera {
@@ -28,36 +40,64 @@ impl Camera {
         image_width: i32,
         samples_per_pixel: i32,
         max_depth: i32,
+        vfov: f64,
+        lookfrom: Point3,
+        lookat: Point3,
+        vup: Vec3,
     ) -> Self {
         let image_height = (image_width as f64 / aspect_ratio) as i32;
         let image_height = if image_height < 1 { 1 } else { image_height };
-        let focal_length = 1.0;
-        let viewport_height = 2.0;
+
+        let center = lookfrom;
+
+        let focal_length = (lookfrom - lookat).length();
+        let theta = degrees_to_radians(vfov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
-        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+
+        let w = (lookfrom - lookat).unit();
+        let u = vup.cross(&w).unit();
+        let v = w.cross(&u);
+
+        let viewport_u = u * viewport_width;
+        let viewport_v = -v * viewport_height;
         let pixel_delta_u = viewport_u / image_width as f64;
         let pixel_delta_v = viewport_v / image_height as f64;
-        let viewport_upper_left = Point3::new(0.0, 0.0, 0.0)
-            - viewport_u / 2.0
-            - viewport_v / 2.0
-            - Vec3::new(0.0, 0.0, focal_length);
+        let viewport_upper_left = center - (w * focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
         let pixel00_loc = viewport_upper_left + pixel_delta_u / 2.0 + pixel_delta_v / 2.0;
+
         Self {
             aspect_ratio,
             image_width,
             samples_per_pixel,
             max_depth,
+            vfov,
+            lookfrom,
+            lookat,
+            vup,
             image_height,
-            center: Point3::new(0.0, 0.0, 0.0),
+            center,
             pixel00_loc,
             pixel_delta_u,
             pixel_delta_v,
+            u,
+            v,
+            w,
         }
     }
 
     pub fn default() -> Self {
-        Self::new(1.0, 100, 10, 10)
+        Self::new(
+            1.0,
+            100,
+            10,
+            10,
+            90.0,
+            Point3::new(0.0, 0.0, -1.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+        )
     }
 
     fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
