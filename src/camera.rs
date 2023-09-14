@@ -184,13 +184,6 @@ impl Camera {
             self.image_width, self.image_height
         ));
         for j in 0..self.image_height {
-            // Log
-            if j as f64 / self.image_height as f64 * 100.0 > percentage as f64 {
-                if percentage % log_interval == 0 {
-                    println!("{}% finished", percentage);
-                }
-                percentage += 1;
-            }
             for i in 0..self.image_width {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
@@ -198,6 +191,13 @@ impl Camera {
                     pixel_color += Self::ray_color(&r, self.max_depth, world);
                 }
                 crate::color::write_color(&mut s, pixel_color, self.samples_per_pixel);
+            }
+            // Log
+            if j as f64 / self.image_height as f64 * 100.0 > percentage as f64 {
+                percentage += 1;
+                if percentage % log_interval == 0 {
+                    println!("{}% finished", percentage);
+                }
             }
         }
         // Log
