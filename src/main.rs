@@ -58,10 +58,12 @@ fn main() -> Result<(), std::io::Error> {
     let image_width = 400;
     let samples_per_pixel = 100;
     let max_depth = 50;
-    let vfov = 15.0;
+    let vfov = 20.0;
     let lookfrom = Point3::new(-2.0, 2.0, 1.0);
     let lookat = Point3::new(0.0, 0.0, -1.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
+    let defocus_angle = 20.0;
+    let focus_dist = 3.4;
     let cam = Camera::new(
         aspect_ratio,
         image_width,
@@ -71,6 +73,8 @@ fn main() -> Result<(), std::io::Error> {
         lookfrom,
         lookat,
         vup,
+        defocus_angle,
+        focus_dist,
     );
 
     // Render

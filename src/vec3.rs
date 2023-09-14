@@ -42,21 +42,41 @@ impl Vec3 {
         )
     }
 
-    // pub fn random_unit() -> Self {
+    // pub fn random_vec2() -> Self {
     //     let a = utils::random_double_in(0.0, 2.0 * utils::PI);
-    //     let z = utils::random_double_in(-1.0, 1.0);
-    //     let r = (1.0 - z * z).sqrt();
-    //     Self::new(r * a.cos(), r * a.sin(), z)
+    //     let r = utils::random_double_in(0.0, 1.0);
+    //     Self::new(r * a.cos(), r * a.sin(), 0.0)
     // }
 
-    pub fn random_unit() -> Self {
+    pub fn random_vec2() -> Self {
         loop {
-            let p = Self::random_in(-1.0, 1.0);
-            if p.dot_square() < 1.0 {
-                return p.unit();
+            let p = Self::new(
+                utils::random_double_in(-1.0, 1.0),
+                utils::random_double_in(-1.0, 1.0),
+                0.0,
+            );
+            if p.length() < 1.0 {
+                return p;
             }
         }
     }
+
+    pub fn random_unit() -> Self {
+        let a = utils::random_double_in(0.0, 2.0 * utils::PI);
+        let z = utils::random_double_in(-1.0, 1.0);
+        let r = (1.0 - z * z).sqrt();
+        Self::new(r * a.cos(), r * a.sin(), z)
+    }
+
+    // This function is slower.
+    // pub fn random_unit() -> Self {
+    //     loop {
+    //         let p = Self::random_in(-1.0, 1.0);
+    //         if p.dot_square() < 1.0 {
+    //             return p.unit();
+    //         }
+    //     }
+    // }
 
     pub fn random_on_hemi(normal: &Self) -> Self {
         let rand_in_unit = Self::random_unit();
